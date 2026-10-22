@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { openDetectedFilePath } from './terminal-link-handlers'
 import type { RuntimeWorkspaceFileRoute } from '@/lib/runtime-workspace-file-route'
+import * as filePreview from '@/lib/file-preview'
 import { activateAndRevealWorkspace } from '@/lib/worktree-activation'
 import { downloadAndOpenRemoteTerminalFile } from './terminal-remote-file-download-open'
 import { createTerminalLinkTestDoubles } from './terminal-link-handlers-test-fixtures'
@@ -126,6 +127,53 @@ describe('a paired-server link outside its own workspace', () => {
     )
     expect(openFileMock.mock.calls[0][0]).not.toHaveProperty('readOnly')
     expect(showHintMock).not.toHaveBeenCalled()
+  })
+
+  it('retains the host-resolved HTML owner when opening in another workspace', async () => {
+    storeState.unifiedTabsByWorktree = {
+      'wt-feat': [
+        {
+          id: 'source',
+          entityId: 'term-1',
+          groupId: 'source-group',
+          contentType: 'terminal',
+          executionHostId: 'runtime:env-1'
+        }
+      ]
+    }
+    hostAnswers({
+      worktree: 'wt-main',
+      relativePath: 'report.html',
+      absolutePath: '/repo/report.html',
+      exists: true,
+      isDirectory: false
+    })
+    const plan = { status: 'doc-preview' } as const
+    const previewPlan = vi
+      .spyOn(filePreview, 'getWorkspaceFilePreviewPlan')
+      .mockReturnValueOnce(plan)
+    const openPreview = vi.spyOn(filePreview, 'openFileInBrowserTab').mockReturnValueOnce(plan)
+    try {
+      openDetectedFilePath('/repo/report.html', null, null, {
+        ...featureWorktree,
+        sourceTabId: 'source'
+      })
+      await flushDoubleRaf()
+
+      expect(openPreview).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filePath: '/repo/report.html',
+          worktreeId: 'wt-main',
+          fileExecutionHostId: 'runtime:env-1',
+          linkContext: expect.objectContaining({
+            linkIntent: expect.objectContaining({ workspaceId: 'wt-feat', hostId: 'runtime:env-1' })
+          })
+        })
+      )
+    } finally {
+      previewPlan.mockRestore()
+      openPreview.mockRestore()
+    }
   })
 
   it("opens the host's spelling of the path so the tab stays a workspace file", async () => {

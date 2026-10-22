@@ -1,4 +1,3 @@
-import { getWorkspaceFilePreviewPlan, openFileInBrowserTab } from '@/lib/file-preview'
 import { downloadAndOpenRemoteTerminalFile } from './terminal-remote-file-download-open'
 import { isPathInsideWorktree, toWorktreeRelativePath } from '@/lib/terminal-links'
 import type { RuntimeWorkspaceFileRoute } from '@/lib/runtime-workspace-file-route'
@@ -6,7 +5,10 @@ import { canClientOsOpenWorkspaceFile } from '@/lib/workspace-file-host-routing'
 import { isMissingRuntimePathError } from '@/runtime/runtime-file-metadata-client'
 import { useAppStore } from '@/store'
 import { activateAndRevealWorkspace, activateAndRevealWorktree } from '@/lib/worktree-activation'
-import { resolveKnownWorktreeRootPathLink } from './terminal-worktree-path-link'
+import {
+  resolveKnownWorktreeRootPathLink,
+  terminalFileSourceHost
+} from './terminal-worktree-path-link'
 import {
   getTerminalFileContext,
   mapTerminalFilePath,
@@ -29,7 +31,7 @@ import {
   siblingWorkspaceLink
 } from './terminal-file-other-workspace-owner'
 import { resolveTerminalLinkFileOwner } from './terminal-file-link-owner-resolution'
-import { openResolvedHtmlFileInBrowser } from './terminal-file-link-browser-open'
+import { openTerminalHtmlFileInBrowser } from './terminal-file-link-browser-open'
 export { isHtmlFilePath } from './local-html-file-destinations'
 import { refuseOpenInGroupRequest } from './terminal-file-open-in-group-toast'
 import { isExplicitEditorScopeKept, openLinkedFileInEditor } from './terminal-file-link-editor-open'
@@ -114,6 +116,9 @@ export function openDetectedFilePath(
 
   void (async () => {
     const sourceContext = getTerminalFileContext(worktreeId, worktreePath, runtimeEnvironmentId)
+    const sourceFileHostId =
+      terminalFileSourceHost(useAppStore.getState(), sourceContext) ??
+      getConnectionExecutionHostId(sourceContext.connectionId)
     const sourceRuntimeOwnerId = runtimeTargetEnvironmentId(sourceContext.target)
     if (!sourceContext.sourceHostResolved) {
       if (refuseExplicitNonEditorRoute()) return
@@ -226,44 +231,24 @@ export function openDetectedFilePath(
     // Why: a local HTML file routed to Orca renders in its browser, which also catches a
     // system-browser open the OS could not launch.
     if (isHtmlFilePath(mappedFilePath) && hostGrantId === null) {
-      if (canOpenWithSystemDefault) {
-        if (deps.openInSourceGroup && refuseExplicitNonEditorRoute()) {
-          return
-        }
-        const outcome = openResolvedHtmlFileInBrowser({
-          filePath: mappedFilePath,
-          worktreeId,
-          clientLocal,
-          linkContext
-        })
-        if (outcome?.status === 'refused' || outcome?.status === 'unsupported') {
-          refuseExplicitNonEditorRoute()
-        }
+      if (deps.openInSourceGroup) {
+        refuseExplicitNonEditorRoute()
         return
       }
-      // Why: the same gesture renders remote HTML too, through the doc preview; only an
-      // unsupported plan (e.g. a paired doc outside the worktree) falls back to source.
-      const plan = getWorkspaceFilePreviewPlan(useAppStore.getState(), worktreeId, mappedFilePath)
-      if (plan.status === 'doc-preview') {
-        if (deps.openInSourceGroup && refuseExplicitNonEditorRoute()) {
-          return
-        }
-        if (!linkContext) activateAndRevealWorkspace(worktreeId, { providesInitialSurface: true })
-        openFileInBrowserTab({
+      const fileExecutionHostId = hostWorkspaceFile?.executionHostId ?? sourceFileHostId
+      if (
+        openTerminalHtmlFileInBrowser({
           filePath: mappedFilePath,
           worktreeId,
           clientLocal,
-          ...(linkContext
-            ? {
-                linkContext,
-                onLinkOutcome: (outcome) => {
-                  if (outcome.status === 'refused' || outcome.status === 'unsupported') {
-                    refuseExplicitNonEditorRoute()
-                  }
-                }
-              }
+          canOpenWithSystemDefault,
+          ...(linkContext && !clientLocal ? { fileExecutionHostId } : {}),
+          linkContext,
+          ...(deps.openInSourceGroupSurface === 'browser'
+            ? { refuseOpenInSourceGroup: refuseExplicitNonEditorRoute }
             : {})
         })
+      ) {
         return
       }
     }
