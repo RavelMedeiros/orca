@@ -246,7 +246,7 @@ export function openDetectedFilePath(
           canOpenWithSystemDefault,
           ...(linkContext && !clientLocal ? { fileExecutionHostId } : {}),
           linkContext,
-          ...(deps.openInSourceGroupSurface === 'browser'
+          ...(deps.openInSourceGroupSurface !== undefined
             ? { refuseOpenInSourceGroup: refuseExplicitNonEditorRoute }
             : {})
         })
