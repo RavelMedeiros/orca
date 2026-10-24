@@ -16,8 +16,11 @@ test('a paired client refuses project setup on its server’s SSH host with a cl
     const { target } = await host.client.call<{ target: { id: string } }>('ssh.addTarget', {
       target: { label: 'Recipe VM', host: '127.0.0.1', port: 1, username: 'dev' }
     })
-    const client = await launchPairedWebClient(host.app, host.offer)
+    const client = await launchPairedWebClient(host.app, host.offer, { waitForWorkspace: false })
     try {
+      await expect
+        .poll(() => client.page.evaluate(() => Boolean(window.__store)), { timeout: 30_000 })
+        .toBe(true)
       const errors = await client.page.evaluate(async (hostId) => {
         const messages: string[] = []
         const original = console.error
