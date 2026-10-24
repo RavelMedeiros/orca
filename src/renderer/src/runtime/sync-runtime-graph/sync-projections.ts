@@ -144,6 +144,8 @@ function buildBrowserWorkspacesProjection(
             projection: JSON.stringify(
               workspaces.map((workspace) => ({
                 id: workspace.id,
+                sessionProfileId: workspace.sessionProfileId,
+                sessionPartition: workspace.sessionPartition,
                 activePageId: workspace.activePageId,
                 title: workspace.title,
                 url: workspace.url,
@@ -187,6 +189,7 @@ function buildBrowserPagesProjection(
             projection: JSON.stringify(
               pages.map((page) => ({
                 id: page.id,
+                browserRuntimeEnvironmentId: page.browserRuntimeEnvironmentId,
                 title: page.title,
                 url: page.url,
                 loading: page.loading,
