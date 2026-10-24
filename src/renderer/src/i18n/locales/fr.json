@@ -149,6 +149,9 @@
     },
     "managedProfile": {
       "createFailed": "Impossible de créer le profil de navigateur de cet espace de travail. Fermez cet onglet et ouvrez-en un nouveau pour réessayer."
+    },
+    "responsiveSplit": {
+      "menuItem": "Bureau + mobile côte à côte"
     }
   },
   "githubChecks": {

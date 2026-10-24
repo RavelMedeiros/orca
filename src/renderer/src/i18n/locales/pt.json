@@ -630,6 +630,9 @@
         "pending": "Verificações pendentes"
       },
       "runningElsewhere": "{{count}} em execução em outros espaços de trabalho"
+    },
+    "responsiveSplit": {
+      "menuItem": "Desktop + mobile lado a lado"
     }
   },
   "settings": {

@@ -215,6 +215,9 @@
       "title": "History",
       "today": "Today",
       "yesterday": "Yesterday"
+    },
+    "responsiveSplit": {
+      "menuItem": "Desktop + Mobile Side by Side"
     }
   },
   "editor": {

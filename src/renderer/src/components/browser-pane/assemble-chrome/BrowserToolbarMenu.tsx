@@ -16,6 +16,10 @@ import {
   getBrowserViewportPreset
 } from '../../../../../shared/browser-viewport-presets'
 import { BrowserToolbarMenuDropdown } from './browser-toolbar-menu-dropdown'
+import {
+  canOpenBrowserResponsiveSplit,
+  openBrowserResponsiveSplit
+} from '../responsive/open-browser-responsive-split'
 import { BrowserToolbarProfileDialogs } from './browser-toolbar-profile-dialogs'
 import { translate } from '@/i18n/i18n'
 import type { BrowserChromeOverflowMenuProps } from './browser-chrome-folded-tools'
@@ -51,6 +55,11 @@ export function BrowserToolbarMenu({
   const fetchDetectedBrowsers = useAppStore((s) => s.fetchDetectedBrowsers)
   const browserSessionImportState = useAppStore((s) => s.browserSessionImportState)
   const setBrowserPageViewportPreset = useAppStore((s) => s.setBrowserPageViewportPreset)
+  const canOpenResponsiveSplit = useAppStore((s) =>
+    canOpenBrowserResponsiveSplit(
+      s.browserPagesByWorkspace[workspaceId]?.find((page) => page.id === browserPageId)
+    )
+  )
   const browserCookieTourStepActive = useAppStore(
     (s) => s.activeContextualTourId === 'browser' && s.activeContextualTourStepIndex === 2
   )
@@ -288,6 +297,9 @@ export function BrowserToolbarMenu({
         onImportFromFile={() => void handleImportFromFile()}
         viewportPresetId={viewportPresetId}
         onApplyViewportPreset={applyViewportPreset}
+        onOpenResponsiveSplit={
+          canOpenResponsiveSplit ? () => openBrowserResponsiveSplit(browserPageId) : null
+        }
         siteDisplay={siteDisplay}
         onZoomPage={zoomPage}
         onSetSiteColorScheme={setSiteColorScheme}

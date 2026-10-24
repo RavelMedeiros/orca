@@ -20134,6 +20134,9 @@
     },
     "managedProfile": {
       "createFailed": "No se pudo crear el perfil del navegador de este espacio de trabajo. Cierra esta pestaña y abre una nueva para volver a intentarlo."
+    },
+    "responsiveSplit": {
+      "menuItem": "Escritorio + móvil lado a lado"
     }
   },
   "runtimeRpc": {

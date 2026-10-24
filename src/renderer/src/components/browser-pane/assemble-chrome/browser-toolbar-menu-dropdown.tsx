@@ -1,4 +1,14 @@
-import { Check, Ellipsis, FileCode2, History, Import, Monitor, Plus, Settings } from 'lucide-react'
+import {
+  Check,
+  Ellipsis,
+  FileCode2,
+  History,
+  Import,
+  Monitor,
+  MonitorSmartphone,
+  Plus,
+  Settings
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -61,6 +71,7 @@ type BrowserToolbarMenuDropdownProps = {
   onImportFromFile: () => void
   viewportPresetId: BrowserViewportPresetId | null
   onApplyViewportPreset: (nextId: BrowserViewportPresetId | null) => void
+  onOpenResponsiveSplit: (() => void) | null
   siteDisplay: BrowserPageSiteDisplay | null
   onZoomPage: (direction: BrowserPageZoomDirection) => void
   onSetSiteColorScheme: (colorScheme: BrowserSiteColorScheme | null) => void
@@ -83,6 +94,7 @@ export function BrowserToolbarMenuDropdown({
   onImportFromFile,
   viewportPresetId,
   onApplyViewportPreset,
+  onOpenResponsiveSplit,
   siteDisplay,
   onZoomPage,
   onSetSiteColorScheme,
@@ -277,6 +289,13 @@ export function BrowserToolbarMenuDropdown({
             </DropdownMenuSubContent>
           </DropdownMenuPortal>
         </DropdownMenuSub>
+        {onOpenResponsiveSplit ? (
+          // Why deferred: the new split takes focus, which the closing menu would hand back to ⋯.
+          <DropdownMenuItem onSelect={() => overflow.deferUntilClose(onOpenResponsiveSplit)}>
+            <MonitorSmartphone className="mr-2 size-3.5" />
+            {translate('browser.responsiveSplit.menuItem', 'Desktop + Mobile Side by Side')}
+          </DropdownMenuItem>
+        ) : null}
 
         <DropdownMenuSeparator />
 

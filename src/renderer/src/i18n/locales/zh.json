@@ -20133,6 +20133,9 @@
     },
     "managedProfile": {
       "createFailed": "无法创建此工作区的浏览器配置文件。关闭此选项卡并打开一个新选项卡以重试。"
+    },
+    "responsiveSplit": {
+      "menuItem": "桌面与移动端并排显示"
     }
   },
   "runtimeRpc": {

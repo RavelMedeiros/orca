@@ -20133,6 +20133,9 @@
     },
     "managedProfile": {
       "createFailed": "このワークスペースのブラウザプロファイルを作成できませんでした。このタブを閉じて、新規タブを開いてもう一度試してください。"
+    },
+    "responsiveSplit": {
+      "menuItem": "デスクトップとモバイルを並べて表示"
     }
   },
   "runtimeRpc": {
