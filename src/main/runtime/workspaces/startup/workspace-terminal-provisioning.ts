@@ -7,6 +7,9 @@ import type { WorktreeStartupReadinessHost } from '../../runtime-worktree-startu
 import { prefetchWorktreeCreateBase } from '../../../worktree-create-base-prefetch'
 import { prepareWorktreeCreateForRepo } from '../../../worktree-create-preparation'
 import { getWorktreeCreatePrefetchGitOptions } from '../../../project-runtime-git-options'
+import { fetchFullHistoryAndRefreshLocalBaseRef } from '../../../git/local-base-ref-history-fetch'
+import type { LocalBaseRefHistoryFetchResult } from '../../../../shared/worktree/base-ref-drift-types'
+import { isFolderRepo } from '../../../../shared/repo-kind'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { ORCA_LAYOUT_OWNER_IS_MAIN } from '../../../../shared/layout-owner-switch'
 import type { LayoutApplyReply } from '../../../../shared/workspace-layout/workspace-layout-command-types'
@@ -179,6 +182,24 @@ export abstract class OrcaRuntimeWithGetWorktreeTerminalProvisioningHost extends
       gitOptions: getWorktreeCreatePrefetchGitOptions(store, repo),
       prepareCheckout: (base, beforeMaterialization) =>
         prepareWorktreeCreateForRepo(store, repo, base, beforeMaterialization)
+    })
+  }
+
+  async fetchFullHistoryForLocalBaseRef(args: {
+    repoSelector: string
+    baseRef: string
+  }): Promise<LocalBaseRefHistoryFetchResult> {
+    const repo = await this.resolveRepoSelector(args.repoSelector)
+    // An `ssh:` repo's refs live behind the relay, which never reports shallow history.
+    if (isFolderRepo(repo) || repo.connectionId) {
+      return { ok: false, reason: 'not_remote_base' }
+    }
+    return fetchFullHistoryAndRefreshLocalBaseRef({
+      repoPath: repo.path,
+      baseRef: args.baseRef,
+      gitOptions: getWorktreeCreatePrefetchGitOptions(this.requireStore(), repo),
+      resolveRemoteTrackingBase: (repoPath, baseRef, gitOptions) =>
+        this.resolveRemoteTrackingBase(repoPath, baseRef, gitOptions)
     })
   }
 }

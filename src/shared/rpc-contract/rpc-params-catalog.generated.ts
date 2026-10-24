@@ -642,7 +642,11 @@ import {
   WorkspacePortScanParams
 } from './workspace-ports-params'
 import { SetCollapsedParams } from './workspace-view-collapse-params'
-import { WorktreeCreate, WorktreePrefetchCreateBase } from './worktree-create-params'
+import {
+  WorktreeCreate,
+  WorktreeFetchFullHistoryForLocalBaseRef,
+  WorktreePrefetchCreateBase
+} from './worktree-create-params'
 import {
   WorktreeActivate,
   WorktreeDetectedListParams,
@@ -1435,6 +1439,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'worktree.adoptProvisionedRoot': WorktreeAdoptProvisionedRoot,
   'worktree.create': WorktreeCreate,
   'worktree.detectedList': WorktreeDetectedListParams,
+  'worktree.fetchFullHistoryForLocalBaseRef': WorktreeFetchFullHistoryForLocalBaseRef,
   'worktree.forceDeleteBranch': WorktreeForceDeleteBranch,
   'worktree.lineageList': null,
   'worktree.list': WorktreeListParams,

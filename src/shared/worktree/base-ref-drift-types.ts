@@ -3,7 +3,19 @@ export type LocalBaseRefRefreshResult = {
   baseRef: string
   localBranch: string
   ownerWorktreePath?: string
+  /** A shallow clone hides the shared history, so Git cannot prove local is only behind. */
+  shallowHistory?: true
 }
+
+// Why: downloading a clone's missing history is far larger than a routine fetch.
+export const LOCAL_BASE_REF_HISTORY_FETCH_TIMEOUT_MS = 10 * 60_000
+// Covers the host's fetch budget plus its bounded fast-forward wait.
+export const LOCAL_BASE_REF_HISTORY_FETCH_REPLY_TIMEOUT_MS =
+  LOCAL_BASE_REF_HISTORY_FETCH_TIMEOUT_MS + 60_000
+
+export type LocalBaseRefHistoryFetchResult =
+  | { ok: true; refresh?: LocalBaseRefRefreshResult }
+  | { ok: false; reason: 'not_remote_base' | 'fetch_failed'; detail?: string }
 
 export type LocalBaseRefUpdateSuggestion = {
   baseRef: string

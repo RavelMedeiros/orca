@@ -845,7 +845,20 @@
           },
           "createdWithoutParentNesting": "Created without nesting under \"{{value0}}\"",
           "createdWithoutParentNestingUnnamed": "Created without nesting under the selected parent",
-          "createdWithoutParentNestingDetail": "The parent workspace was no longer available. You can set it from the workspace menu."
+          "createdWithoutParentNestingDetail": "The parent workspace was no longer available. You can set it from the workspace menu.",
+          "localBaseRefHistoryFetchNoRemote": "Orca could not find the remote for this base. Run the command above in a terminal instead.",
+          "localBaseRefHistoryFetchFailedDetail": "Could not fetch history from {{value0}}: {{value1}}",
+          "localBaseRefHistoryFetchFailed": "Could not fetch history from {{value0}}. Check your connection and try again.",
+          "localBaseRefHistoryFetchSucceeded": "Local {{value0}} is up to date",
+          "localBaseRefHistoryFetchSucceededDescription": "Fetched the full history, so new workspaces will keep local {{value0}} current.",
+          "localBaseRefShallowHistoryCommand": "Runs",
+          "localBaseRefShallowHistoryDuration": "Large repositories can take a few minutes.",
+          "localBaseRefHistoryFetching": "Fetching history…",
+          "localBaseRefHistoryFetchRetry": "Try again",
+          "localBaseRefHistoryFetch": "Fetch full history",
+          "localBaseRefShallowHistoryNamed": "\"{{value0}}\" is ready and based on {{value1}}. Local {{value2}} was left alone because this clone only has recent history, so Git cannot confirm it is just behind. Fetch the full history once to fix this for every new workspace.",
+          "localBaseRefShallowHistory": "Your workspace is ready and based on {{value0}}. Local {{value1}} was left alone because this clone only has recent history, so Git cannot confirm it is just behind. Fetch the full history once to fix this for every new workspace.",
+          "localBaseRefShallowHistoryTitle": "Local {{value0}} not updated: shallow clone"
         },
         "repos": {
           "2975400634": "Update Orca server to open non-Git folders on this runtime.",
@@ -11927,7 +11940,9 @@
           "orcaCloudConnect": "Connect profile",
           "orcaCloudRefresh": "Refresh status",
           "orcaCloudNotConfigured": "Set ORCA_CLOUD_API_URL and ORCA_CLOUD_CLIENT_ID to preview Orca Cloud sign-in in this dev build.",
-          "deleteAnywayClicked": "Delete Anyway clicked"
+          "deleteAnywayClicked": "Delete Anyway clicked",
+          "shallowCloneBaseRefToast": "Shallow clone base ref toast",
+          "shallowCloneBaseRefToastDescription": "Fetch full history action with busy, failure, and retry states."
         },
         "EphemeralVmRecipeRow": {
           "useInWorkspace": "Use in workspace"

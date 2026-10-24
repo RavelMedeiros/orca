@@ -28,6 +28,7 @@ import { WORKTREE_LINKED_WORK_ITEM_CONTEXT_RUNTIME_CAPABILITY } from '../../../.
 import { showLocalBaseRefUpdateSuggestionToast } from '@/components/sidebar/local-base-ref-suggestion-toast'
 import { requestWorktreeBaseFallbackNotice } from '@/components/worktree-base-fallback-notice'
 import { showLocalBaseRefRefreshToast } from './local-base-ref-refresh-toast'
+import { fetchFullHistoryForLocalBaseRef } from './fetch-local-base-ref-history'
 import { applyCreatedWorktree } from './created-worktree-state-merge'
 import { adoptRuntimeProvisionedRoot } from './runtime-provisioned-root-adoption'
 import { isRuntimeLineageParentMissingError } from '../listing/runtime-worktree-rpc-errors'
@@ -255,7 +256,14 @@ export function createCreateWorktree(
             holdCreatedSidebarWorkspace({ worktree: created })
           }
           const { result } = outcome
-          showLocalBaseRefRefreshToast(result.localBaseRefRefresh, result.worktree)
+          const refresh = result.localBaseRefRefresh
+          showLocalBaseRefRefreshToast(
+            refresh,
+            result.worktree,
+            refresh?.shallowHistory
+              ? () => fetchFullHistoryForLocalBaseRef(target, repoId, refresh.baseRef)
+              : undefined
+          )
           if (result.baseFallback) {
             requestWorktreeBaseFallbackNotice(result.baseFallback)
           }

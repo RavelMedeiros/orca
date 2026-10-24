@@ -169,3 +169,11 @@ export const WorktreePrefetchCreateBase = z.object({
     .pipe(z.string().min(1, 'Missing repo selector')),
   baseBranch: OptionalString
 })
+
+export const WorktreeFetchFullHistoryForLocalBaseRef = z.object({
+  repo: z
+    .unknown()
+    .transform((v) => (typeof v === 'string' ? v : ''))
+    .pipe(z.string().min(1, 'Missing repo selector')),
+  baseRef: z.string().min(1, 'Missing base ref')
+})

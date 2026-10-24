@@ -18,6 +18,7 @@ import type {
 } from '../../shared/folder-workspace-path-status'
 import type { FolderWorkspace } from '../../shared/folder-workspace-types'
 import type {
+  LocalBaseRefHistoryFetchResult,
   WorktreeBaseStatusEvent,
   WorktreeRemoteBranchConflictEvent
 } from '../../shared/worktree/base-ref-drift-types'
@@ -64,6 +65,11 @@ export type WorktreeApi = {
   /** Local creates report progress by creationId; remote/runtime creates emit nothing. */
   onCreateProgress: (callback: (data: CreateWorktreeProgressEvent) => void) => () => void
   prefetchCreateBase: (args: { repoId: string; baseBranch?: string }) => Promise<void>
+  /** Deepens a shallow clone so local base can fast-forward again. */
+  fetchFullHistoryForLocalBaseRef: (args: {
+    repoId: string
+    baseRef: string
+  }) => Promise<LocalBaseRefHistoryFetchResult>
   resolvePrBase: (args: {
     repoId: string
     prNumber: number

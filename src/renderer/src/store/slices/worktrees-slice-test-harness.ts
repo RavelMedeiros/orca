@@ -71,6 +71,7 @@ export const mockApi = {
     create: stubMock(),
     adoptProvisionedRoot: stubMock(),
     prefetchCreateBase: stubMock().mockResolvedValue(undefined),
+    fetchFullHistoryForLocalBaseRef: stubMock().mockResolvedValue({ ok: true }),
     listDetected: listDetectedMock,
     listKnownForExecutionHost: listKnownForExecutionHostMock,
     forgetRemovedForExecutionHost: forgetRemovedForExecutionHostMock,

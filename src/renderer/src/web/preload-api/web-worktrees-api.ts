@@ -15,6 +15,7 @@ import type { WorkspaceLineage, WorktreeLineage } from '../../../../shared/workt
 import { readRetiredNameRegistryForRepo } from '../../../../shared/worktree/retired-name-cache'
 import { EMPTY_RETIRED_NAME_REGISTRY } from '../../../../shared/worktree/retired-name-registry'
 import { worktreeRemovalReplyTimeoutMs } from '../../../../shared/worktree/archive-hook-removal-gate'
+import { LOCAL_BASE_REF_HISTORY_FETCH_REPLY_TIMEOUT_MS } from '../../../../shared/worktree/base-ref-drift-types'
 import { toRuntimeWorktreeSelector } from '../../runtime/runtime-worktree-selector'
 import {
   getRemoteRuntimeStatus,
@@ -122,6 +123,12 @@ export function createWorktreesApi(): NonNullable<Partial<PreloadApi>['worktrees
         baseBranch
       })
     },
+    fetchFullHistoryForLocalBaseRef: ({ repoId, baseRef }) =>
+      callRuntimeResult(
+        'worktree.fetchFullHistoryForLocalBaseRef',
+        { repo: repoId, baseRef },
+        LOCAL_BASE_REF_HISTORY_FETCH_REPLY_TIMEOUT_MS
+      ),
     resolvePrBase: async ({ repoId, prNumber, headRefName, baseRefName, isCrossRepository }) =>
       callRuntimeResult('worktree.resolvePrBase', {
         repo: repoId,

@@ -35,6 +35,8 @@ export const worktreesApi = {
   },
 
   prefetchCreateBase: (args) => ipcRenderer.invoke('worktrees:prefetchCreateBase', args),
+  fetchFullHistoryForLocalBaseRef: (args) =>
+    ipcRenderer.invoke('worktrees:fetchFullHistoryForLocalBaseRef', args),
 
   resolvePrBase: (args) => ipcRenderer.invoke('worktrees:resolvePrBase', args),
 

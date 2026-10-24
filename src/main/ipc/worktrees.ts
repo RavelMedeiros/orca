@@ -5,6 +5,7 @@ import type { OrcaRuntimeService, RuntimeWorktreeLifecycleEvent } from '../runti
 import { createSenderScopedRequestCancellations } from './sender-scoped-request-cancellation'
 import { registerWorktreeCreateHandlers } from './worktrees/create/register-worktree-create-handlers'
 import { registerWorktreePrefetchHandler } from './worktrees/create/register-worktree-prefetch-handler'
+import { registerLocalBaseRefHistoryHandler } from './worktrees/create/register-local-base-ref-history-handler'
 import { registerReviewBaseHandlers } from './worktrees/create/register-review-base-handlers'
 import { registerWorktreeHookCheckHandler } from './hooks/register-worktree-hook-check-handler'
 import { registerWorktreeHookFileHandlers } from './hooks/register-worktree-hook-file-handlers'
@@ -36,6 +37,7 @@ const WORKTREE_HANDLER_CHANNELS = [
   'worktrees:create',
   'worktrees:adoptProvisionedRoot',
   'worktrees:prefetchCreateBase',
+  'worktrees:fetchFullHistoryForLocalBaseRef',
   'worktrees:resolvePrBase',
   'worktrees:resolveMrBase',
   'worktrees:remove',
@@ -85,6 +87,7 @@ export function registerWorktreeHandlers(
   registerHostCatalogHandlers(context)
   registerDetectedWorktreeHandlers(context)
   registerWorktreePrefetchHandler(context)
+  registerLocalBaseRefHistoryHandler(context)
   registerWorktreeCreateHandlers(context)
   registerReviewBaseHandlers(context)
   registerWorktreeRemovalHandlers(context)

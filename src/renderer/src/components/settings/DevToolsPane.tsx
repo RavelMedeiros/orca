@@ -5,6 +5,7 @@ import { Badge } from '../ui/badge'
 import { SettingsSubsectionHeader } from './SettingsFormControls'
 import { showDeleteWorktreeFailureToast } from '../sidebar/delete-worktree-failure-toast'
 import { showLocalBaseRefUpdateSuggestionToast } from '../sidebar/local-base-ref-suggestion-toast'
+import { showLocalBaseRefRefreshToast } from '@/store/slices/worktrees/create/local-base-ref-refresh-toast'
 import { useOrcaProfileAuthStatusRefresh } from '@/hooks/use-orca-profile-auth-status-refresh'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
@@ -92,6 +93,43 @@ function showBehindBaseRefToast(): void {
       openSettingsPage: () => {},
       openSettingsTarget: () => {}
     }
+  )
+}
+
+function showShallowCloneBaseRefToast(): void {
+  let attempts = 0
+  showLocalBaseRefRefreshToast(
+    {
+      status: 'skipped_not_fast_forward',
+      baseRef: 'origin/main',
+      localBranch: 'main',
+      shallowHistory: true
+    },
+    {
+      id: 'dev-shallow-clone',
+      repoId: 'dev-repo',
+      displayName: LONG_WORKSPACE_NAME,
+      branch: LONG_WORKSPACE_NAME,
+      path: '/tmp/dev-shallow-clone'
+    },
+    // First attempt fails so the retry path can be checked too.
+    () =>
+      new Promise((resolve) => {
+        attempts += 1
+        setTimeout(
+          () =>
+            resolve(
+              attempts === 1
+                ? {
+                    ok: false,
+                    reason: 'fetch_failed',
+                    detail: "fatal: unable to access 'https://example.com/repo.git/'"
+                  }
+                : { ok: true }
+            ),
+          1500
+        )
+      })
   )
 }
 
@@ -295,6 +333,18 @@ export function DevToolsPane(): React.JSX.Element {
       ),
       icon: <Bell className="size-4" />,
       onClick: showBehindBaseRefToast
+    },
+    {
+      title: translate(
+        'auto.components.settings.DevToolsPane.shallowCloneBaseRefToast',
+        'Shallow clone base ref toast'
+      ),
+      description: translate(
+        'auto.components.settings.DevToolsPane.shallowCloneBaseRefToastDescription',
+        'Fetch full history action with busy, failure, and retry states.'
+      ),
+      icon: <Bell className="size-4" />,
+      onClick: showShallowCloneBaseRefToast
     }
   ]
 
