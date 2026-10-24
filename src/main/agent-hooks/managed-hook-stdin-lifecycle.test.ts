@@ -89,6 +89,7 @@ import {
 import { wrapRuntimeHomeHookCommand } from './runtime-home-hook-command'
 import { createAgentHookMemorySftp } from './agent-hook-memory-sftp.test-fixture'
 import { findGitBash } from './windows-git-bash-path.test-fixture'
+import { captureWindowsProcessSnapshot } from './sta11968-process-snapshot.test-fixture'
 import {
   buildWindowsNativeHookExecutable,
   WINDOWS_NATIVE_HOOK_BUILD_TIMEOUT_MS
@@ -162,11 +163,17 @@ const REMOTE_INSTALLERS = [
 ] as const
 
 const LOCAL_INSTALLERS = [
-  { agent: 'antigravity', install: () => new AntigravityHookService().install() },
+  {
+    agent: 'antigravity',
+    install: () => new AntigravityHookService().install()
+  },
   { agent: 'claude', install: () => new ClaudeHookService().install() },
   { agent: 'openclaude', install: () => openClaudeHookService.install() },
   { agent: 'codex', install: () => new CodexHookService().install() },
-  { agent: 'command-code', install: () => new CommandCodeHookService().install() },
+  {
+    agent: 'command-code',
+    install: () => new CommandCodeHookService().install()
+  },
   { agent: 'copilot', install: () => new CopilotHookService().install() },
   { agent: 'cursor', install: () => new CursorHookService().install() },
   { agent: 'devin', install: () => new DevinHookService().install() },
@@ -200,13 +207,35 @@ function runHookProcess(
     const stdinErrors: NodeJS.ErrnoException[] = []
     let stderr = ''
     let stdout = ''
+    // TEMP diagnostics for STA-11968.
+    const startedAt = Date.now()
+    const label = `${executable} ${args.join(' ').slice(0, 160)}`
+    const marks: string[] = []
+    const mark = (name: string): void => {
+      marks.push(`${name}@${Date.now() - startedAt}`)
+    }
+    child.on('exit', (code) => mark(`exit(${code})`))
+    child.stdout.on('close', () => mark('stdoutClose'))
+    child.stderr.on('close', () => mark('stderrClose'))
+    child.stdin.on('finish', () => mark('stdinFinish'))
+    child.stdin.on('close', () => mark('stdinClose'))
+    let snapshot = ''
+    const describeState = (): string =>
+      `[DIAG] ${new Date(startedAt).toISOString()} ${label} stdin=${stdin} pid=${child.pid} marks=${marks.join(' ')} stdinErrors=${stdinErrors.map((e) => e.code).join(',')} stdout=${JSON.stringify(stdout.slice(0, 300))} stderr=${JSON.stringify(stderr.slice(0, 600))}`
+    const diagTimer = setTimeout(() => {
+      void captureWindowsProcessSnapshot(child.pid).then((text) => {
+        snapshot = text
+        console.log(`${describeState()} at8s\n${text}`)
+      })
+    }, 8_000)
     const timeout = setTimeout(() => {
       child.stdin.destroy()
       child.kill('SIGKILL')
-      reject(new Error(`hook did not finish with stdin ${stdin}d`))
-    }, 10_000)
+      reject(new Error(`hook did not finish with stdin ${stdin}d ${describeState()}\n${snapshot}`))
+    }, 25_000)
     child.on('error', (error) => {
       clearTimeout(timeout)
+      clearTimeout(diagTimer)
       reject(error)
     })
     child.stdout.on('data', (chunk: Buffer) => {
@@ -218,6 +247,14 @@ function runHookProcess(
     child.stdin.on('error', (error: NodeJS.ErrnoException) => stdinErrors.push(error))
     child.on('close', (exitCode) => {
       clearTimeout(timeout)
+      clearTimeout(diagTimer)
+      mark('close')
+      const elapsed = Date.now() - startedAt
+      console.log(`[DIAG] done in ${elapsed}ms ${describeState()}`)
+      if (elapsed > 8_000) {
+        reject(new Error(`hook finished late after ${elapsed}ms ${describeState()}\n${snapshot}`))
+        return
+      }
       resolve({ exitCode, stdinErrors, stderr, stdout })
     })
     if (stdin === 'close') {
@@ -262,7 +299,10 @@ async function generatePosixScripts(): Promise<Map<string, string>> {
 // Keep the platform override pinned across asynchronous installers.
 async function withPlatform<T>(platform: NodeJS.Platform, run: () => T | Promise<T>): Promise<T> {
   const original = Object.getOwnPropertyDescriptor(process, 'platform')
-  Object.defineProperty(process, 'platform', { configurable: true, value: platform })
+  Object.defineProperty(process, 'platform', {
+    configurable: true,
+    value: platform
+  })
   try {
     return await run()
   } finally {
@@ -340,7 +380,9 @@ describe('Windows managed hook stdin structure', () => {
         ],
         [
           'wrapRuntimeHomeHookCommand',
-          wrapRuntimeHomeHookCommand('missing-orca-hook', { neutralJsonWhenMissing: true })
+          wrapRuntimeHomeHookCommand('missing-orca-hook', {
+            neutralJsonWhenMissing: true
+          })
         ]
       ] as const) {
         const decoded = decodeEncodedPowerShellCommand(command)
@@ -469,7 +511,8 @@ describe('Windows managed hook stdin structure', () => {
         homedirMock.mockImplementation(() => process.env.HOME ?? tmpdir())
         rmSync(home, { recursive: true, force: true })
       }
-    }
+    },
+    300_000
   )
 
   // Command-shape assertions missed conhost discarding the consumer's JSON output.
@@ -489,7 +532,9 @@ describe('Windows managed hook stdin structure', () => {
         expect(new ClaudeHookService().install().state).toBe('installed')
         const settings = JSON.parse(
           readFileSync(join(home, '.claude', 'settings.json'), 'utf8')
-        ) as { hooks: Record<string, { hooks: { command: string; args?: string[] }[] }[]> }
+        ) as {
+          hooks: Record<string, { hooks: { command: string; args?: string[] }[] }[]>
+        }
         const entry = settings.hooks.PreToolUse[0].hooks[0]
         expect(entry.args).toBeUndefined()
         expect(entry.command.endsWith(form)).toBe(true)
@@ -497,8 +542,16 @@ describe('Windows managed hook stdin structure', () => {
         // MSYS rewrites paths and switches, so exercise both shells.
         const gitBash = findGitBash()
         const shells = [
-          { name: 'cmd.exe', executable: 'cmd.exe', args: ['/d', '/c', entry.command] },
-          { name: 'Git Bash', executable: gitBash, args: ['-c', entry.command] }
+          {
+            name: 'cmd.exe',
+            executable: 'cmd.exe',
+            args: ['/d', '/c', entry.command]
+          },
+          {
+            name: 'Git Bash',
+            executable: gitBash,
+            args: ['-c', entry.command]
+          }
         ]
         const environments = [
           { name: 'no Orca env', env: hookEnvironment({ USERPROFILE: home }) },
@@ -639,7 +692,9 @@ describe.skipIf(process.platform === 'win32')('managed hook stdin lifecycle', ()
   it('drains before Claude skips hooks imported by Devin', async () => {
     const script = (await generatePosixScripts()).get('claude claude-hook.sh')
     expect(script).toBeDefined()
-    const result = await runPosixHook(script!, { DEVIN_PROJECT_DIR: '/tmp/devin-project' })
+    const result = await runPosixHook(script!, {
+      DEVIN_PROJECT_DIR: '/tmp/devin-project'
+    })
     expect(result.exitCode).toBe(0)
     expect(result.stdinErrors).toHaveLength(0)
   })

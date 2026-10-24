@@ -13,6 +13,7 @@ import type { PtyShellLaunchPlan } from '../daemon/pty-subprocess/shell-launch-p
 import type { PtySubprocessOptions } from '../daemon/pty-subprocess'
 import { isGitForWindowsBashLauncherPath, resolveGitBashPath } from '../git-bash'
 import { readWindowsPtyJobProcessIds } from './windows-pty-job-membership'
+import { captureWindowsProcessSnapshot } from '../agent-hooks/sta11968-process-snapshot.test-fixture'
 
 const describeOnWindows = process.platform === 'win32' ? describe : describe.skip
 
@@ -21,7 +22,12 @@ async function spawnPlannedPane(
   env: Record<string, string>,
   opts: PtySubprocessOptions
 ): ReturnType<typeof spawnNativeDaemonPty> {
-  return spawnNativeDaemonPty({ ...plan, env, cols: opts.cols, rows: opts.rows })
+  return spawnNativeDaemonPty({
+    ...plan,
+    env,
+    cols: opts.cols,
+    rows: opts.rows
+  })
 }
 
 /** Drives a live pane through prompt -> foreground command -> interrupt -> background job. */
@@ -60,7 +66,9 @@ async function proveIdlePromptCycle(
     await vi.waitFor(() => expect(output).toContain('ORCA_FOREGROUND_READY'), {
       timeout: 10_000
     })
-    await vi.waitFor(async () => expect(await confirm()).toBe(false), { timeout: 10_000 })
+    await vi.waitFor(async () => expect(await confirm()).toBe(false), {
+      timeout: 10_000
+    })
 
     proc.write('\x03')
     await vi.waitFor(
@@ -72,7 +80,9 @@ async function proveIdlePromptCycle(
     )
 
     proc.write('sleep 60 &\r')
-    await vi.waitFor(async () => expect(await confirm()).toBe(false), { timeout: 10_000 })
+    await vi.waitFor(async () => expect(await confirm()).toBe(false), {
+      timeout: 10_000
+    })
   } finally {
     proc.kill()
   }
@@ -172,10 +182,28 @@ describeOnWindows("Git Bash launcher shell proof with Orca's real launch", () =>
     const inspect = (ignoreDetached: boolean) =>
       inspectSpawnFileWindowsChildProcesses(proc, spawned.shellPath, true, ignoreDetached)
     try {
-      await vi.waitFor(() => expect(output).toContain('$'), { timeout: 20_000 })
+      await vi.waitFor(() => expect(output).toContain('$'), {
+        timeout: 20_000
+      })
       // ssh-agent forks, setsids off the console, and its Win32 parent exits.
       proc.write('eval "$(ssh-agent -s)"; echo ORCA_AGENT_$SSH_AGENT_PID\r')
-      await vi.waitFor(() => expect(output).toMatch(/ORCA_AGENT_\d+/), { timeout: 10_000 })
+      // TEMP diagnostics for STA-11968.
+      const agentStartedAt = Date.now()
+      const diagTimer = setTimeout(() => {
+        void captureWindowsProcessSnapshot(proc.pid).then((text) =>
+          console.log(`[DIAG] ssh-agent pending at 8s output=${JSON.stringify(output)}\n${text}`)
+        )
+      }, 8_000)
+      try {
+        await vi.waitFor(() => expect(output).toMatch(/ORCA_AGENT_\d+/), {
+          timeout: 40_000
+        })
+      } finally {
+        clearTimeout(diagTimer)
+      }
+      const agentElapsed = Date.now() - agentStartedAt
+      console.log(`[DIAG] ssh-agent marker after ${agentElapsed}ms`)
+      expect(agentElapsed, `ssh-agent late ${JSON.stringify(output)}`).toBeLessThan(8_000)
       agentPid = Number(/ORCA_AGENT_(\d+)/.exec(output)?.[1])
       await vi.waitFor(async () => expect(await inspect(true)).toBe('no-children'), {
         timeout: 10_000
@@ -196,5 +224,5 @@ describeOnWindows("Git Bash launcher shell proof with Orca's real launch", () =>
       }
       proc.kill()
     }
-  }, 60_000)
+  }, 120_000)
 })
